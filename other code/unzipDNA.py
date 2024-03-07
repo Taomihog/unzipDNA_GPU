@@ -50,7 +50,7 @@ def getEDNA(seq, salt_mM, kT):
     print("energy:", energy[-1])
     return energy
 
-with open('exampleData.txt', 'r') as file:
+with open('..\\data\\NEB_H5alpha_Accessory_colonization_factor_AcfD.txt', 'r') as file:
     sequence = file.read().replace('\n', '')
 EDNA = getEDNA(sequence,salt_mM,kT)
 print()

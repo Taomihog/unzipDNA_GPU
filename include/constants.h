@@ -15,7 +15,7 @@
 #define ARMLENGTH 2200 //total length of the 2 dsDNA arms, unit is base-pair.
 #define PILLARSTIFFNESS 0.07406f //spring constant of the pillar/optical trap/micro-needle/etc that is used for stretching.
 #define SALTCONC 100.0f  //salt concentration in mM, this the the salt concentraion or the unzip experiment 
-#define EFFSALTCONC (std::log(SALTCONC * 0.001f) / 298.0) // 298.0 K is where the energy was measured in Huguet paper, it is not equal to Condition::temperature
+#define EFFSALTCONC (log(SALTCONC * 0.001f) / 298.0) // 298.0 K is where the energy was measured in Huguet paper, it is not equal to Condition::temperature
 #define FACTOR_PNNM (PNNM * JOUL / AVOGADRO / KT) // convert to 'pN-nm' unit;
 
 //====================================DNA mechanical parameters======================================
@@ -26,6 +26,16 @@
 #define LPSS 0.765f //ssDNA persistence length
 #define KSS  470.0f //ssDNA elastic modulus  
 #define L0SS 0.554f //ssDNA contour length per nt
+
+//======================================numerical calculation control========================================
+#define NTHREAD 32
+// simulation precisions, etc.
+#define VALIDMAXFORCE       100.0f
+#define VALIDMINFORCE       0.01f
+#define TOR_BINARY_SEARCH   1.0e-3f
+#define VERYLARGENUMBER     1.0e10f
+//When dE > this threshold, don't calculate exp(-e/kT) and set probability to 0;
+#define ENERGY_THRESHOLD    50.0f
 
 //====================================basepair energy measured by Huguet et al===============================
 //ref: Huguet, Josep M., et al. (2010) PNAS

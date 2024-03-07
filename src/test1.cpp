@@ -1,12 +1,19 @@
 #include <iostream>
-#include "constants.h"
+#include <string>
+#include <vector>
+#include "../include/constants.h"
+#include "../include/temp_data.h"
+#include "../include/parser.h"
+
 int main() {
 
-    // test the bp energy
-    char ch1 = 'a';
-    char ch2 = 't';
-    printf("some result: %f.\n", BPEnergy::lookup_bp_energy(ch1,ch2));
-
+    //std::string seq {temp_data::data};
+    std::string path {"../data/NEB_H5alpha_Accessory_colonization_factor_AcfD.txt"};
+    std::string seq = parser::readtxt_firstline(path);
+    std::vector<double> seq_energy = parser::calculate_sequence_energy(seq);
+    //test, the "43048.29409015185" is from my python code
+    std::cout << "Sequence energy differs from python program by "<< KT * (*(seq_energy.cend() - 1)) - 43048.29409015185 << std::endl;// no difference, good
+    
 
     return 0;
 }
