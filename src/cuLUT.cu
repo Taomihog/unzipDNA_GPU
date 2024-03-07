@@ -104,10 +104,13 @@ __device__ inline double ext_at_this_force(double force, double j) {
             ARMLENGTH * L0DS * alpha2phi_Odijk95(force * LPDS / KT, KDS * LPDS / KT) + 
             2.0 * j * L0SS * alpha2phi_Smith95_m(force * LPSS / KT, KSS * LPSS / KT);//increasing function with force
 }
-__global__ void kernel(float * force, float * energy) {
+__global__ void kernel(int max_j, int max_z, float * force, float * energy) {
     // map from threadIdx/BlockIdx to pixel position
     int j = threadIdx.x + blockIdx.x * blockDim.x;
     int z = threadIdx.y + blockIdx.y * blockDim.y;
+    if (j >= max_j || z >= max_z) {
+        return;
+    }
     int offset = j + z * blockDim.x * gridDim.x;
 
     float f = 0.0f;//meaning that the root is not found
@@ -184,55 +187,66 @@ __global__ void kernel(float * force, float * energy) {
 }
 #undef double
 
+// it seems like that there must be a wrapper; I cannot make the kernel function .dll
+
 #ifdef DLL
 // the output function
-extern "C" __declspec(dllexport) void get_LUT(int X_DIM, int Y_DIM, float * force_out, float * energy_out) {
+extern "C" __declspec(dllexport) void get_LUT(int j_dim, int z_dim, float * force_out, float * energy_out) {
 #else
-void get_LUT(int X_DIM, int Y_DIM, float * force_out, float * energy_out) {
+void get_LUT(int j_dim, int z_dim, float * force_out, float * energy_out) {
 #endif
     cudaEvent_t start, stop;
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
     cudaEventRecord(start, 0);
 
-    // x_index is j, y_index is z, can
-    dim3    threads(NTHREAD, NTHREAD);
-    dim3    blocks(X_DIM/NTHREAD, Y_DIM/NTHREAD);
-
-    printf("Total size (j x z):     %d x %d.\n", X_DIM, Y_DIM);
-    printf("Threads dim:            %d x %d.\n", NTHREAD, NTHREAD);
-    printf("Blocks dim:             %d x %d.\n", X_DIM/NTHREAD, Y_DIM/NTHREAD);
+    // x_index is j, y_index is z
+    printf("LUT size (j x z):       %d x %d.\n", j_dim, z_dim);
 
     float * d_force, * d_energy;
-    cudaMalloc((void**)&d_force, X_DIM * Y_DIM * sizeof(float));
-    cudaMalloc((void**)&d_energy, X_DIM * Y_DIM * sizeof(float));
+    cudaMalloc((void**)&d_force, j_dim * z_dim * sizeof(float));
+    cudaMalloc((void**)&d_energy, j_dim * z_dim * sizeof(float));
 
-    kernel<<<blocks,threads>>>(d_force, d_energy);
+    dim3 threads(NTHREAD, NTHREAD);
+    printf("Threads dim:            %d x %d.\n", NTHREAD, NTHREAD);
+    // Follow the convention in the NVidia book:
+    // guarantee the block is larger than we need for force_out and energy_out here
+    // then handle the out-of-range in the kernel, by immediate return when out-of-range of the array size of force_out and energy_out
+    dim3 blocks((j_dim + NTHREAD - 1)/NTHREAD, (z_dim + NTHREAD - 1)/NTHREAD);
+    printf("Blocks dim:             %d x %d.\n", j_dim/NTHREAD, z_dim/NTHREAD);
+    kernel<<<blocks,threads>>>(j_dim, z_dim, d_force, d_energy);
 
-    cudaMemcpy(force_out, d_force, X_DIM * Y_DIM * sizeof(float), cudaMemcpyDeviceToHost);
-    cudaMemcpy(energy_out, d_energy, X_DIM * Y_DIM * sizeof(float), cudaMemcpyDeviceToHost);
+    // instead of copy to host, we keep these LUTs on device.
+    // no! I cannot do it!
+    // force_out = d_force;
+    // energy_out = d_energy;
+    cudaMemcpy(force_out, d_force, j_dim * z_dim * sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(energy_out, d_energy, j_dim * z_dim * sizeof(float), cudaMemcpyDeviceToHost);
+    cudaFree(d_force);
+    cudaFree(d_energy);
+
     cudaEventRecord(stop, 0 );
     cudaEventSynchronize(stop);
     float elapsedTime;
     cudaEventElapsedTime(&elapsedTime, start, stop );
-    printf("Time to generate: %3.1f s\n", elapsedTime/1000);
+    printf("Time to generate: %.1f s\n", elapsedTime/1000);
 }
 
 #ifndef DLL
 int main() {
     int max_j_unzipped = 1000;
-    int X_DIM = (max_j_unzipped + NTHREAD - 1);
-    X_DIM -= X_DIM % NTHREAD;
-    int Y_DIM = (int)((max_j_unzipped + ARMLENGTH) * L0SS * 2) + NTHREAD - 1;
-    Y_DIM -= Y_DIM % NTHREAD;
+    int j_dim = (max_j_unzipped + NTHREAD - 1);
+    j_dim -= j_dim % NTHREAD;
+    int z_dim = (int)((max_j_unzipped + ARMLENGTH) * L0SS * 2) + NTHREAD - 1;
+    z_dim -= z_dim % NTHREAD;
     
-    float *force = new float [X_DIM * Y_DIM];
-    float *energy = new float [X_DIM * Y_DIM];
+    float *force = new float [j_dim * z_dim];
+    float *energy = new float [j_dim * z_dim];
 
-    get_LUT(X_DIM, Y_DIM, force, energy);
+    get_LUT(j_dim, z_dim, force, energy);
 
-    printf("force[%d][%d] = %f\n", JJ,ZZ, force[JJ + ZZ * X_DIM]);
-    printf("energy[%d][%d] = %f\n", JJ,ZZ, energy[JJ + ZZ * X_DIM]);
+    printf("force[%d][%d] = %f\n", JJ,ZZ, force[JJ + ZZ * j_dim]);
+    printf("energy[%d][%d] = %f\n", JJ,ZZ, energy[JJ + ZZ * j_dim]);
 
     // float temp;
     // get_force(100, 1000, &temp);

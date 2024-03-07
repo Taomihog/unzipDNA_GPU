@@ -1,3 +1,6 @@
+// command to build:
+// g++ test.cpp -o test.exe -L. -l_parser
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -8,7 +11,7 @@
 int main() {
 
     //std::string seq {temp_data::data};
-    std::string path {"../data/NEB_H5alpha_Accessory_colonization_factor_AcfD.txt"};
+    std::string path {"../test_data/NEB_H5alpha_Accessory_colonization_factor_AcfD.txt"};
     std::string seq = parser::readtxt_firstline(path);
     std::vector<double> seq_energy = parser::calculate_sequence_energy(seq);
     //test, the "43048.29409015185" is from my python code

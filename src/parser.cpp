@@ -1,3 +1,9 @@
+// make this a static lib first:
+// g++ -c  parser.cpp -o parser.o
+// lib /OUT:lib_parser.a parser.o 
+// or
+// ar rcs lib_parser.a parser.o
+
 #include <string>
 #include <vector>
 #include <iterator>
