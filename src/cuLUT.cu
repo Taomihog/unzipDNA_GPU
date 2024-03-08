@@ -210,14 +210,14 @@ void get_LUT(int j_dim, int z_dim, float * force_out, float * energy_out) {
     dim3 threads(NTHREAD, NTHREAD);
     printf("Threads dim:            %d x %d.\n", NTHREAD, NTHREAD);
     // Follow the convention in the NVidia book:
-    // guarantee the block is larger than we need for force_out and energy_out here
-    // then handle the out-of-range in the kernel, by immediate return when out-of-range of the array size of force_out and energy_out
+    // Guarantee here that the block is larger than we need for force_out and energy_out
+    // Handle later the out-of-range in the kernel, by immediate return when j and z are out-of-range of force_out and energy_out
     dim3 blocks((j_dim + NTHREAD - 1)/NTHREAD, (z_dim + NTHREAD - 1)/NTHREAD);
     printf("Blocks dim:             %d x %d.\n", j_dim/NTHREAD, z_dim/NTHREAD);
     kernel<<<blocks,threads>>>(j_dim, z_dim, d_force, d_energy);
 
-    // instead of copy to host, we keep these LUTs on device.
-    // no! I cannot do it!
+    // ~~instead of copying to host, we keep these LUTs on device.~~
+    // no! I cannot do it somehow!
     // force_out = d_force;
     // energy_out = d_energy;
     cudaMemcpy(force_out, d_force, j_dim * z_dim * sizeof(float), cudaMemcpyDeviceToHost);

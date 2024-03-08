@@ -9,13 +9,14 @@ nvcc -shared -o cuLUT.dll cuLUT.o -lcudart
 @REM make static libraries:
 g++ -c  parser.cpp -o parser.o
 @REM ar rcs lib_parser.a parser.o
-ar rcs lib_parser.lib parser.o
 @REM lib /OUT:lib_parser.lib parser.o 
+ar rcs lib_parser.lib parser.o
 
 @REM make main.exe
 @REM the syntax of nvcc is different from gcc to link a lib
 @REM g++ main.cpp -o main.exe -L. -lparser
-nvcc main.cu -o main.exe -L. -llib_parser -rdc=true
+@REM nvcc main.cu -o main.exe -L. -llib_parser -rdc=true
+nvcc main.cu -o main.exe -rdc=true
 
 @REM run
 main.exe

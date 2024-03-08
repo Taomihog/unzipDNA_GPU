@@ -30,12 +30,12 @@
 //======================================numerical calculation control========================================
 #define NTHREAD 32
 // simulation precisions, etc.
-#define VALIDMAXFORCE       100.0f
-#define VALIDMINFORCE       0.01f
-#define TOR_BINARY_SEARCH   1.0e-3f
-#define VERYLARGENUMBER     1.0e10f
+#define VALIDMAXFORCE       1000.0f
+#define VALIDMINFORCE       0.001f
+#define TOR_BINARY_SEARCH   1.0e-4
+#define VERYLARGENUMBER     1.0e20
 //When dE > this threshold, don't calculate exp(-e/kT) and set probability to 0;
-#define ENERGY_THRESHOLD    50.0f
+#define ENERGY_THRESHOLD    50.0f 
 
 //====================================basepair energy measured by Huguet et al===============================
 //ref: Huguet, Josep M., et al. (2010) PNAS
