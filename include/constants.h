@@ -1,3 +1,26 @@
+// My GPU:
+/*
+   --- General Information for device 0 ---
+Name:  NVIDIA GeForce RTX 3070 Laptop GPU
+Compute capability:  8.6
+Clock rate:  1290000
+Device copy overlap:  Enabled
+Kernel execution timeout :  Enabled
+   --- Memory Information for device 0 ---
+Total global mem:  8589410304
+Total constant Mem:  65536
+Max mem pitch:  2147483647
+Texture Alignment:  512
+   --- MP Information for device 0 ---
+Multiprocessor count:  40
+Shared mem per mp:  49152
+Registers per mp:  65536
+Threads in warp:  32
+Max threads per block:  1024
+Max thread dimensions:  (1024, 1024, 64)
+Max grid dimensions:  (2147483647, 65535, 65535)
+*/
+
 #pragma once
 #include <vector>
 #include <string>
@@ -29,13 +52,28 @@
 
 //======================================numerical calculation control========================================
 #define NTHREAD 32
+#define NTHREAD_1D (NTHREAD * NTHREAD)
 // simulation precisions, etc.
 #define VALIDMAXFORCE       1000.0f
 #define VALIDMINFORCE       0.001f
-#define TOR_BINARY_SEARCH   1.0e-4
+#define TOR_BINARY_SEARCH   1.0e-2
 #define VERYLARGENUMBER     1.0e20
 //When dE > this threshold, don't calculate exp(-e/kT) and set probability to 0;
 #define ENERGY_THRESHOLD    50.0f 
+
+// ==============================================data struct================================================
+// the x dimension of the res_arr
+#define SZ 6
+struct data {
+    int zmax;
+    float * res_arr;
+};
+struct LUT {
+    int LUT_j_dim;
+    int LUT_z_dim;
+    float * d_force_LUT; 
+    float * d_energy_LUT;
+};
 
 //====================================basepair energy measured by Huguet et al===============================
 //ref: Huguet, Josep M., et al. (2010) PNAS

@@ -1,40 +1,12 @@
-/*
-cmd to compile DLL file:
-nvcc -c -o cuLUT.o cuLUT.cu -DDLL
-nvcc -shared -o cuLUT.dll cuLUT.o -lcudart
-
-objdump: A good tool of gcc users to search for the addresses of functions, command:
-objdump -x cuLUT.dll
-*/
-#include <cuda_runtime.h>
+// #include <cuda_runtime.h>
 #include "../include/constants.h"
-
-/*
-   --- General Information for device 0 ---
-Name:  NVIDIA GeForce RTX 3070 Laptop GPU
-Compute capability:  8.6
-Clock rate:  1290000
-Device copy overlap:  Enabled
-Kernel execution timeout :  Enabled
-   --- Memory Information for device 0 ---
-Total global mem:  8589410304
-Total constant Mem:  65536
-Max mem pitch:  2147483647
-Texture Alignment:  512
-   --- MP Information for device 0 ---
-Multiprocessor count:  40
-Shared mem per mp:  49152
-Registers per mp:  65536
-Threads in warp:  32
-Max threads per block:  1024
-Max thread dimensions:  (1024, 1024, 64)
-Max grid dimensions:  (2147483647, 65535, 65535)
-*/
 
 #ifndef DLL
 #include <stdio.h>
-#define JJ 100
-#define ZZ 800
+#define JJ      100
+#define ZZ      800
+#define JJ2     0
+#define ZZ2     2140
 #endif
 
 #define double float
@@ -229,29 +201,25 @@ void get_LUT(int j_dim, int z_dim, float * force_out, float * energy_out) {
     cudaEventSynchronize(stop);
     float elapsedTime;
     cudaEventElapsedTime(&elapsedTime, start, stop );
-    printf("Time to generate: %.1f s\n", elapsedTime/1000);
+    printf("Time to generate the look-up tables: %.1f s\n", elapsedTime/1000);
 }
 
 #ifndef DLL
 int main() {
-    int max_j_unzipped = 1000;
-    int j_dim = (max_j_unzipped + NTHREAD - 1);
-    j_dim -= j_dim % NTHREAD;
-    int z_dim = (int)((max_j_unzipped + ARMLENGTH) * L0SS * 2) + NTHREAD - 1;
-    z_dim -= z_dim % NTHREAD;
+    constexpr int j_dim = 4096;
+    constexpr int z_dim = 4096;
     
     float *force = new float [j_dim * z_dim];
     float *energy = new float [j_dim * z_dim];
 
     get_LUT(j_dim, z_dim, force, energy);
 
+    printf("Test:\n");
     printf("force[%d][%d] = %f\n", JJ,ZZ, force[JJ + ZZ * j_dim]);
     printf("energy[%d][%d] = %f\n", JJ,ZZ, energy[JJ + ZZ * j_dim]);
-
-    // float temp;
-    // get_force(100, 1000, &temp);
-    // printf("force %f\n", temp);
-
+    printf("force[%d][%d] = %f\n", JJ2,ZZ2, force[JJ2 + ZZ2 * j_dim]);
+    printf("energy[%d][%d] = %f\n", JJ2,ZZ2, energy[JJ2 + ZZ2 * j_dim]);
+    
     delete[] force, energy;
     return 0;
 }
