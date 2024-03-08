@@ -8,3 +8,5 @@
 *.lib
 *.exe
 *.a
+*.exp
+*.csv
