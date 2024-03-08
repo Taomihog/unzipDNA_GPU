@@ -1,10 +1,11 @@
 @echo off
-@echo cleaning directory:
+@echo Cleaning up directory:
 del *.exp
 del *.lib
 del *.o
 del *.dll
 del *.exe
+del *.csv
 
 @echo Making cuLUT.dll:
 @REM I am not sure about what the "cudart" do
@@ -22,12 +23,12 @@ nvcc -shared -o cuUnzip.dll cuUnzip.o -lcudart
 @echo (Note: the syntax of nvcc is different from gcc to link a lib)
 @REM g++ main.cpp -o main.exe -L. -lparser
 @REM nvcc main.cu -o main.exe -L. -llib_parser -rdc=true
-nvcc main.cu -o main.exe -rdc=true
+nvcc main.cu -o main.exe -rdc=true -std=c++17
 
-@echo cleaning directory:
+@echo Cleaning up directory:
 del *.exp
 del *.lib
 del *.o
 
-@echo testing
+@echo Running main.exe
 main.exe
