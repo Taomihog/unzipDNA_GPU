@@ -90,99 +90,7 @@ std::vector<double> calculate_sequence_energy(const std::string & sequence) {
 
     return sequenceEnergy;
 }
-// =====================producer and consumer=============================
-// global var
-std::mutex mtx;
-std::condition_variable cv;
-std::queue<data> dataQueue;
-std::queue<std::string> pathQueue;
-bool finished = false;
-// producer 
-void producer(LUT lut, std::vector<std::string> paths) {
-    HINSTANCE hDLL = LoadLibrary("cuUnzip.dll"); 
-    if (hDLL == NULL) {
-        std::cerr << "cuUnzip.dll open failed.";
-        std::cerr << "Error code:" << GetLastError();
-        exit(0);
-    }
 
-    //extern "C" __declspec(dllexport) data unzip(int seq_len, const float * d_seq_energy, LUT lut)
-    auto unzip = (data (*)(int, const float * , LUT))GetProcAddress(hDLL, "unzip");
-    if (unzip == NULL) {
-        std::cerr << "unzip() doesn't exist.";
-        std::cerr << "Error code:" << GetLastError();
-        exit(0);
-    }
-
-    for (int data_idx = 0; data_idx < paths.size(); ++data_idx) {
-        std::string path = paths[data_idx];
-        std::lock_guard<std::mutex> lock(mtx);
-        auto start = Clock::now();
-
-        std::string seq = readtxt_firstline(path);
-        //from the DNA sequence, calculate the energy at every j_unzipped.
-        std::vector<double> seq_energy = calculate_sequence_energy(seq);
-        const int seq_len = seq_energy.size();
-        // convert the std::vector of double to an array of float, then copy to device
-        float * seq_energy_arr = new float[seq_energy.size()];
-        for (size_t i = 0; i < seq_energy.size(); ++i) {
-            seq_energy_arr[i] = static_cast<float>(seq_energy[i]);
-        }
-        float * d_seq_energy;
-        cudaMalloc((void**) &d_seq_energy, sizeof(float) * seq_energy.size());
-        cudaMemcpy(d_seq_energy, seq_energy_arr, sizeof(float) * seq_energy.size(), cudaMemcpyHostToDevice);
-        delete[] seq_energy_arr;
-
-        dataQueue.push(unzip(seq_len, d_seq_energy, lut)); // Push data to the queue
-        pathQueue.push(path);
-
-        auto end = Clock::now();
-        auto elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-        std::cout << "Execution time: " << static_cast<double>(elapsedTime) / 1'000'000.0 << " s for file '" << path <<"'."<< std::endl;
-        
-        cv.notify_one(); // Notify the consumer
-        //std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
-    finished = true;
-    cv.notify_one(); // Notify the consumer that production is finished
-    
-    FreeLibrary(hDLL);
-}
-// consumer 
-void consumer(int LUT_j_dim) {
-    while (!finished) {
-        std::unique_lock<std::mutex> lock(mtx);
-        cv.wait(lock, []{ return !dataQueue.empty() || finished; }); // Wait until there is data or production is finished
-        if (!dataQueue.empty()) {
-            data p = dataQueue.front(); 
-            dataQueue.pop(); 
-            std::string path_in = pathQueue.front(); 
-            pathQueue.pop(); 
-            
-            std::string path_out = creat_path_out(path_in);
-            std::ofstream fout(path_out);
-            if (!fout) {
-                std::cerr << "Error in creating file '" << path_out << "'. Cannot save result" << std::endl;
-                break;
-            }
-
-            fout << "total_extension_nm,DNA_extension_avg_nm,force_avg_pN,force_sd_pN,average_bp_unzipped_avg,bp_unzipped_sd" << std::endl;
-            char delimit = ',';
-            for(int i = 0; i < p.zmax; ++i) {
-                fout << (p.res_arr)[i * SZ] << delimit;
-                fout << (p.res_arr)[i * SZ + 1] << delimit;
-                fout << (p.res_arr)[i * SZ + 2] << delimit;
-                fout << (p.res_arr)[i * SZ + 3] << delimit;
-                fout << (p.res_arr)[i * SZ + 4] << delimit;
-                fout << (p.res_arr)[i * SZ + 5] << std::endl;
-            }
-            // Close the file
-            fout.close();
-            std::cout << "Result has been written to '" << path_out << "'." <<std::endl;
-            delete[] (p.res_arr);
-        }
-    }
-}
 // main
 int main() {
     // LUT's size along j and z directions, and:
@@ -222,26 +130,83 @@ int main() {
     cudaMalloc((void**) &d_energy_LUT, sizeof(float) * LUT_j_dim * LUT_z_dim);
     cudaMemcpy(d_force_LUT, force_LUT, sizeof(float) * LUT_j_dim * LUT_z_dim, cudaMemcpyHostToDevice);
     cudaMemcpy(d_energy_LUT, energy_LUT, sizeof(float) * LUT_j_dim * LUT_z_dim, cudaMemcpyHostToDevice);
+    const LUT lut {LUT_j_dim, LUT_z_dim, d_force_LUT, d_energy_LUT};
 
-    LUT lut {LUT_j_dim, LUT_z_dim, d_force_LUT, d_energy_LUT};
-    std::vector<std::string> paths {};
-    std::string folder_path = "../test_data/h5a_all";
-    for (const auto& entry : (std::filesystem::directory_iterator(folder_path))) {
-        if (entry.is_regular_file()) {
-            std::string fullFilePath = folder_path + "/" + entry.path().filename().string();
-            std::cout << fullFilePath << std::endl;
-            paths.emplace_back(fullFilePath);
-        }
+    HINSTANCE hDLL = LoadLibrary("cuUnzip.dll"); 
+    if (hDLL == NULL) {
+        std::cerr << "cuUnzip.dll open failed.";
+        std::cerr << "Error code:" << GetLastError();
+        exit(0);
     }
-    std::thread producerThread(producer, lut, paths);
-    std::thread consumerThread(consumer, LUT_j_dim);
 
-    producerThread.join();
-    consumerThread.join();
+    //extern "C" __declspec(dllexport) data unzip(int seq_len, const float * d_seq_energy, LUT lut)
+    auto unzip = (data (*)(int, const float * , LUT))GetProcAddress(hDLL, "unzip");
+    if (unzip == NULL) {
+        std::cerr << "unzip() doesn't exist.";
+        std::cerr << "Error code:" << GetLastError();
+        exit(0);
+    }
 
+    std::string folder_path = "../test_data/h5a_all";
+    std::string fullFilePath {};
+    for (const auto& entry : (std::filesystem::directory_iterator(folder_path))) {
+        auto start = Clock::now();
+
+        fullFilePath = folder_path + "/" + entry.path().filename().string();
+        if (!entry.is_regular_file()) {
+            std::cerr << "Error: irregular file: " << fullFilePath << std::endl;
+        }
+        
+        std::string seq = readtxt_firstline(fullFilePath);
+        //from the DNA sequence, calculate the energy at every j_unzipped.
+        std::vector<double> seq_energy = calculate_sequence_energy(seq);
+        const int seq_len = seq_energy.size();
+
+        // convert the std::vector of double to an array of float, then copy to device
+        float * seq_energy_arr = new float[seq_energy.size()];
+        for (size_t i = 0; i < seq_energy.size(); ++i) {
+            seq_energy_arr[i] = static_cast<float>(seq_energy[i]);
+        }
+
+        float * d_seq_energy;
+        cudaMalloc((void**) &d_seq_energy, sizeof(float) * seq_energy.size());
+        cudaMemcpy(d_seq_energy, seq_energy_arr, sizeof(float) * seq_energy.size(), cudaMemcpyHostToDevice);
+        delete[] seq_energy_arr;
+
+        data p = unzip(seq_len, d_seq_energy, lut); 
+        cudaFree(d_seq_energy);
+        
+        std::string path_out = creat_path_out(fullFilePath);
+        std::ofstream fout(path_out);
+        if (!fout) {
+            std::cerr << "Error in creating file '" << path_out << "'. Cannot save result" << std::endl;
+            break;
+        }
+
+        fout << "total_extension_nm,DNA_extension_avg_nm,force_avg_pN,force_sd_pN,average_bp_unzipped_avg,bp_unzipped_sd" << std::endl;
+        char delimit = ',';
+        for(int i = 0; i < p.zmax; ++i) {
+            fout << (p.res_arr)[i * SZ] << delimit;
+            fout << (p.res_arr)[i * SZ + 1] << delimit;
+            fout << (p.res_arr)[i * SZ + 2] << delimit;
+            fout << (p.res_arr)[i * SZ + 3] << delimit;
+            fout << (p.res_arr)[i * SZ + 4] << delimit;
+            fout << (p.res_arr)[i * SZ + 5] << std::endl;
+        }
+        // Close the file
+        fout.close();
+        std::cout << "Result has been written to '" << path_out << "'." <<std::endl;
+        delete[] (p.res_arr);
+            
+        auto end = Clock::now();
+        auto elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+        std::cout << "Execution time: " << static_cast<double>(elapsedTime) / 1'000'000.0 << " s for file '" << fullFilePath <<"'."<< std::endl;
+    }
+    
+    FreeLibrary(hDLL);
     delete[] force_LUT;
     delete[] energy_LUT;
-    cudaFree(d_force_LUT);
-    cudaFree(d_energy_LUT);
+    cudaFree(lut.d_force_LUT);
+    cudaFree(lut.d_energy_LUT);
     return 0;
 }

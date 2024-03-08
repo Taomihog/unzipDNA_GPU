@@ -22,6 +22,7 @@ nvcc -shared -o cuUnzip.dll cuUnzip.o -lcudart
 @echo Making main:
 @echo (Note: the syntax of nvcc is different from gcc to link a lib)
 @REM g++ main.cpp -o main.exe -L. -lparser
+@REM g++ main.cpp -o main.exe -std=c++17
 @REM nvcc main.cu -o main.exe -L. -llib_parser -rdc=true
 nvcc main.cu -o main.exe -rdc=true -std=c++17
 
