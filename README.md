@@ -18,7 +18,7 @@
 
 ### DNA unzipping theory
 
-![image](https://github.com/Taomihog/unzipDNA/assets/110962921/710f75ad-8ba1-4234-a182-a5a5bb144cf1)
+![pred_vs_exp](https://github.com/Taomihog/unzipDNA_GPU/blob/master/reference/DNA_unzipping_prediction_vs_sm_experiment.png)
 
 **DNA unzipping experiment on a 4.4 kb DNA**. The program's prediction (black) aligns well with a single-molecule unzipping curve (blue).  
   
