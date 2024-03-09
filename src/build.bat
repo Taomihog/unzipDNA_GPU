@@ -1,5 +1,7 @@
 @echo off
 @echo Cleaning up directory:
+set "batch_folder=%~dp0"
+cd %batch_folder%
 del *.exp
 del *.lib
 del *.o
@@ -22,7 +24,6 @@ nvcc -shared -o cuUnzip.dll cuUnzip.o -lcudart
 @echo Making main:
 @echo (Note: the syntax of nvcc is different from gcc to link a lib)
 @REM g++ main.cpp -o main.exe -L. -lparser
-@REM g++ main.cpp -o main.exe -std=c++17
 @REM nvcc main.cu -o main.exe -L. -llib_parser -rdc=true
 nvcc main.cu -o main.exe -rdc=true -std=c++17
 
@@ -31,5 +32,8 @@ del *.exp
 del *.lib
 del *.o
 
-@echo Running main.exe
-main.exe
+@echo Testing: 
+IF EXIST "../examples/parsed" (
+    rd /s /q "../examples/parsed_unzip_curves"
+    main ../examples/parsed 
+)

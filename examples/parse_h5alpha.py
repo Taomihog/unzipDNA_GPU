@@ -11,7 +11,7 @@ import pandas as pd
 path_genebankfile = '200304_NEB_H5alpha_genbank.txt'
 path_fasta =        '200304_NEB_H5alpha.txt'
 path_location =     'summary.csv'
-outputfolder = '../example_data/'
+output_folder = 'parsed/'
 
 
 
@@ -89,11 +89,16 @@ def clean_file_name(filename):
 
 
 if __name__ == "__main__":
+    
+    
+    import os
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
 
     data = pd.DataFrame(columns=['line','gene_name','direction','start','end','length'])
     
     #get all genes locations
-    genelocation(path_genebankfile,path_location)
+    genelocation(path_genebankfile, path_location)
 
     # save individual files
     with open(path_fasta, 'r') as file:
@@ -103,16 +108,13 @@ if __name__ == "__main__":
             # print (seq)
             if not ('>' in seq):
                 genome += seq.replace('\n','')
-    print (genome[0:1000])
+                
     data = pd.read_csv(path_location)
     
-    import os
-    if not os.path.exists(outputfolder):
-        os.makedirs(outputfolder)
     
     for i in range(data.count(axis = 0)[0]): 
         # I can only use this slow method, not familiar with dataFrame or string
-        filename = outputfolder + clean_file_name(data['gene_name'].iloc[i][1:]) + '.txt'
+        filename = output_folder + clean_file_name(data['gene_name'].iloc[i][1:]) + '.txt'
         print(filename)
         with open(filename, 'w') as file:
             file.write(genome[data['start'].iloc[i]:data['end'].iloc[i]])

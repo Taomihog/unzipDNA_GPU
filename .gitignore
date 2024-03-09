@@ -1,5 +1,6 @@
-example_data
-example_data/*
+examples/parsed
+examples/parsed*
+examples/parsed/*
 *.i
 *.ii
 *.gpu
@@ -13,3 +14,6 @@ example_data/*
 *.exp
 *.dll
 *.csv
+*.svg
+.vscode
+.vscode/*

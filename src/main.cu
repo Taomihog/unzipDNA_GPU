@@ -14,6 +14,7 @@
 #include <queue>
 #include <chrono>
 #include <filesystem>
+#include <Windows.h>
 
 using Clock = std::chrono::high_resolution_clock;
 
@@ -35,6 +36,23 @@ using Clock = std::chrono::high_resolution_clock;
 #endif
 
 // =============================================util functions==========================================
+// Is windows chars and strings really this tedious???!
+// Convert const char* to std::wstring (LPCWSTR)
+std::wstring convertToWideString(const char* str) {
+    int wideStringLength = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
+    if (wideStringLength == 0) {
+        // Error handling
+        return L"";
+    }
+
+    std::wstring wideString(wideStringLength, L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, str, -1, &wideString[0], wideStringLength);
+    return wideString;
+}
+// Function to convert std::wstring to LPCWSTR
+LPCWSTR convertToLPCWSTR(const std::wstring& str) {
+    return str.c_str(); // Returns pointer to the underlying buffer of std::wstring
+}
 
 // single read. todo: read the fasta directly, multiple line read.
 std::string readtxt_firstline(const std::string & path) {
@@ -55,19 +73,6 @@ std::string readtxt_firstline(const std::string & path) {
     file.close();
 
     return line;
-}
-// generate a file path for output result from the input file path.
-std::string creat_path_out(const std::string & path_in) {
-    size_t lastSlashIndex = path_in.rfind('/');
-
-    std::string parentPath;
-    if (lastSlashIndex != std::string::npos) {
-        parentPath = path_in.substr(0, lastSlashIndex) + "/";
-    }
-
-    std::string fullname = path_in.substr(lastSlashIndex + 1, std::string::npos);
-
-    return parentPath + "out_" + fullname.substr(0, fullname.rfind('.')) + ".csv";;
 }
 // sequence's bp energy
 std::vector<double> calculate_sequence_energy(const std::string & sequence) {
@@ -93,14 +98,8 @@ std::vector<double> calculate_sequence_energy(const std::string & sequence) {
 
 // main
 int main(int argc, char** argv) {
-    if (argc == 1) {
-        return 0;
-    }
-    const std::string folder_path {argv[1]};
 
-    // LUT's size along j and z directions, and:
-    //      j = threadIdx.x + blockIdx.x * blockDim.x
-    //      z = threadIdx.y + blockIdx.y * blockDim.y
+    // LUT's size along j (=x) and z (=y) directions
     constexpr int LUT_j_dim = 16384;
     constexpr int LUT_z_dim = 16384;
     float *force_LUT;
@@ -108,7 +107,6 @@ int main(int argc, char** argv) {
     force_LUT = new float [LUT_j_dim * LUT_z_dim];
     energy_LUT = new float [LUT_j_dim * LUT_z_dim];
 
-    // this scope is common, will not be a thread
     {
         HINSTANCE hDLL = LoadLibrary("cuLUT.dll"); 
         if (hDLL == NULL) {
@@ -117,7 +115,7 @@ int main(int argc, char** argv) {
             return 1;
         }
 
-        //void get_LUT(int X_DIM, int Y_DIM, float * force_out, float * energy_out)
+        //void (*)(int X_DIM, int Y_DIM, float * force_out, float * energy_out)
         auto get_LUT = (void (*)(int, int, float*, float*))GetProcAddress(hDLL, "get_LUT");
         if (get_LUT == NULL) {
             std::cerr << "get_LUT() doesn't exist.";
@@ -143,24 +141,41 @@ int main(int argc, char** argv) {
         std::cerr << "Error code:" << GetLastError();
         exit(0);
     }
-    //data unzip(int seq_len, const float * d_seq_energy, LUT lut)
+
+    //data (*)(int seq_len, const float * d_seq_energy, LUT lut)
     auto unzip = (data (*)(int, const float * , LUT))GetProcAddress(hDLL, "unzip");
     if (unzip == NULL) {
         std::cerr << "unzip() doesn't exist.";
         std::cerr << "Error code:" << GetLastError();
         exit(0);
     }
-
-    std::string fullFilePath {};
-    for (const auto& entry : (std::filesystem::directory_iterator(folder_path))) {
+    
+    // File IO
+    if (argc == 1) {
+        return 0;
+    }
+    const std::string folder_in {argv[1]};
+    const std::string folder_out {folder_in + "_unzip_curves"};
+    std::cout << "folder to calculate: " << folder_in << std::endl;
+    std::cout << "folder to save result: " << folder_out << std::endl;
+    if (!CreateDirectoryW(convertToLPCWSTR(convertToWideString(folder_out.c_str())), NULL)) {
+        std::cerr << "Error creating directory! Directory may have existed, or the permission is denied. " << std::endl;
+        return 1;
+    }
+    std::string fullFilePathIn {};
+    std::string fullFilePathOUt {};
+    std::string fileName {};
+    for (const auto& entry : (std::filesystem::directory_iterator(folder_in))) {
         auto start = Clock::now();
 
-        fullFilePath = folder_path + "/" + entry.path().filename().string();
+        fileName = entry.path().filename().string();
+        fullFilePathIn = folder_in + "/" + fileName;
+        fullFilePathOUt = folder_out + "/" + fileName.substr(0, fileName.rfind(".txt")) + ".csv";
         if (!entry.is_regular_file()) {
-            std::cerr << "Error: irregular file: " << fullFilePath << std::endl;
+            std::cerr << "Error: irregular file: " << fullFilePathIn << std::endl;
         }
-        
-        std::string seq = readtxt_firstline(fullFilePath);
+
+        std::string seq = readtxt_firstline(fullFilePathIn);
         //from the DNA sequence, calculate the energy at every j_unzipped.
         std::vector<double> seq_energy = calculate_sequence_energy(seq);
         const int seq_len = seq_energy.size();
@@ -179,10 +194,9 @@ int main(int argc, char** argv) {
         data p = unzip(seq_len, d_seq_energy, lut); 
         cudaFree(d_seq_energy);
         
-        std::string path_out = creat_path_out(fullFilePath);
-        std::ofstream fout(path_out);
+        std::ofstream fout(fullFilePathOUt);
         if (!fout) {
-            std::cerr << "Error in creating file '" << path_out << "'. Cannot save result" << std::endl;
+            std::cerr << "Error in creating file '" << fullFilePathOUt << "'. Cannot save result" << std::endl;
             break;
         }
 
@@ -196,14 +210,12 @@ int main(int argc, char** argv) {
             fout << (p.res_arr)[i * SZ + 4] << delimit;
             fout << (p.res_arr)[i * SZ + 5] << std::endl;
         }
-        // Close the file
         fout.close();
-        std::cout << "Result has been written to '" << path_out << "'." <<std::endl;
         delete[] (p.res_arr);
-            
+
         auto end = Clock::now();
         auto elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-        std::cout << "Execution time: " << static_cast<double>(elapsedTime) / 1'000'000.0 << " s for file '" << fullFilePath <<"'."<< std::endl;
+        std::cout << "Execution time: " << static_cast<double>(elapsedTime) / 1'000'000.0 << " s, file: '" << fileName <<"', saved to " << folder_out << '.'<< std::endl;
     }
     
     FreeLibrary(hDLL);
