@@ -1,10 +1,19 @@
 # -*- coding: utf-8 -*-
 """
+This program is use to save gene sequences to individual files from the genbank files
+
 Created on Wed Mar  4 21:07:19 2020
 
 @author: taomihog
 """
 import pandas as pd
+
+path_genebankfile = '200304_NEB_H5alpha_genbank.txt'
+path_fasta =        '200304_NEB_H5alpha.txt'
+path_location =     'summary.csv'
+outputfolder = '../example_data/'
+
+
 
 
 
@@ -30,7 +39,7 @@ def genelocation(path,path_save):
                         dirction = -1
                     
                     for k in range(len(location)):
-                        k+=1
+                        k += 1
                         if not location[0:k].isdecimal():
                             a = int(location[0:k-1])
                             b = int(location[k+1:len(location)-1])
@@ -38,7 +47,7 @@ def genelocation(path,path_save):
                             break
                     
                     for j in range(20):
-                        j +=7 #save some time
+                        j += 7 #save some time
                         if '/product=' in lines[j+i]:
                             break
                     gene_name1  = lines[j+i].replace('/product=','').replace('\n','').replace('  ','')
@@ -64,17 +73,22 @@ def genelocation(path,path_save):
     #    print (data)
         data.to_csv(path_save,index = False)
 
+
+
+
+
+#delete the illegal chars for file names
 import string
 def clean_file_name(filename):
     valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
     cleaned_filename = ''.join(char if char in valid_chars else '_' for char in filename)
     return cleaned_filename
 
+
+
+
+
 if __name__ == "__main__":
-    
-    path_genebankfile = 'H5alpha CP017100/200304_NEB_H5alpha_genebank.txt'
-    path_fasta = 'H5alpha CP017100/200304_NEB_H5alpha.txt'
-    path_location = 'gene location.csv'
 
     data = pd.DataFrame(columns=['line','gene_name','direction','start','end','length'])
     
@@ -88,13 +102,17 @@ if __name__ == "__main__":
         for seq in temp:
             # print (seq)
             if not ('>' in seq):
-                genome+=seq.replace('\n','')
+                genome += seq.replace('\n','')
     print (genome[0:1000])
     data = pd.read_csv(path_location)
-    # #'line','gene_name','direction','start','end','length'
+    
+    import os
+    if not os.path.exists(outputfolder):
+        os.makedirs(outputfolder)
+    
     for i in range(data.count(axis = 0)[0]): 
         # I can only use this slow method, not familiar with dataFrame or string
-        filename = 'h5a_all\\' + clean_file_name(data['gene_name'].iloc[i][1:]) + '.txt'
+        filename = outputfolder + clean_file_name(data['gene_name'].iloc[i][1:]) + '.txt'
         print(filename)
         with open(filename, 'w') as file:
             file.write(genome[data['start'].iloc[i]:data['end'].iloc[i]])

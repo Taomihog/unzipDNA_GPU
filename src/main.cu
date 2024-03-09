@@ -92,7 +92,12 @@ std::vector<double> calculate_sequence_energy(const std::string & sequence) {
 }
 
 // main
-int main() {
+int main(int argc, char** argv) {
+    if (argc == 1) {
+        return 0;
+    }
+    const std::string folder_path {argv[1]};
+
     // LUT's size along j and z directions, and:
     //      j = threadIdx.x + blockIdx.x * blockDim.x
     //      z = threadIdx.y + blockIdx.y * blockDim.y
@@ -138,8 +143,7 @@ int main() {
         std::cerr << "Error code:" << GetLastError();
         exit(0);
     }
-
-    //extern "C" __declspec(dllexport) data unzip(int seq_len, const float * d_seq_energy, LUT lut)
+    //data unzip(int seq_len, const float * d_seq_energy, LUT lut)
     auto unzip = (data (*)(int, const float * , LUT))GetProcAddress(hDLL, "unzip");
     if (unzip == NULL) {
         std::cerr << "unzip() doesn't exist.";
@@ -147,7 +151,6 @@ int main() {
         exit(0);
     }
 
-    std::string folder_path = "../test_data/h5a_all";
     std::string fullFilePath {};
     for (const auto& entry : (std::filesystem::directory_iterator(folder_path))) {
         auto start = Clock::now();

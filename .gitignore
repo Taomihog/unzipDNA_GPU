@@ -1,3 +1,5 @@
+example_data
+example_data/*
 *.i
 *.ii
 *.gpu
@@ -9,4 +11,5 @@
 *.exe
 *.a
 *.exp
+*.dll
 *.csv
