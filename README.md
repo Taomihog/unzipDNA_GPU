@@ -1,6 +1,6 @@
 # DNA Unzipping Curve Calculator (GPU version)  
 
-This is a learning project and my first time using CUDA. It runs pretty fast and can finish the whole *E.coli*  genome in about a minute (my GPU: GeForce RTX 3070 Laptop).  
+This is my first time using CUDA. It runs pretty fast and can finish the whole *E.coli*  genome in about a minute on my GeForce RTX 3070 Laptop.  
 
 ## Instructions to Use (with Example Data)  
 
@@ -21,7 +21,7 @@ Result:
 
 ![image](reference/theory_vs_experiment.png)
 
-**DNA unzipping experiment vs theory**. The prediction (black) aligns well with a single-molecule experimental data (blue).  
+**DNA unzipping experiment vs theory**. The prediction (**${\color{black}-}$**) aligns well with the single-molecule unzipping curve (**${\color{red}-}$**).  
 
 ## Why CUDA  
 
