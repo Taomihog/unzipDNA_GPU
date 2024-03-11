@@ -15,5 +15,7 @@ examples/parsed/*
 *.dll
 *.csv
 *.svg
+*.ppt
+*.pptx
 .vscode
 .vscode/*
