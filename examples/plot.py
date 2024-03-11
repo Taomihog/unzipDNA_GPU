@@ -27,7 +27,7 @@ for file in files_with_prefix:
     print(folder_path + '/' + file) 
     cppResult = pd.read_csv(folder_path + '/' + file)
     # print(cppResult.columns)
-    ax.plot(cppResult['total_extension_nm'],cppResult['force_avg_pN'], '-', 
+    ax.plot(cppResult['total_extension_nm'],cppResult['force_avg_pN'], '.', 
             label = "GPU result, gene = "+file[len(prefix):-len(".csv")])
 
 
