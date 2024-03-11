@@ -1,6 +1,6 @@
 # DNA Unzipping Curve Calculator (GPU version)  
 
-This is a learning project and my first time using CUDA. It runs pretty fast and can finish the whole *E.coli*  genome in less than a minute (My GPU is GeForce RTX 3070 Laptop).  
+This is a learning project and my first time using CUDA. It runs pretty fast and can finish the whole *E.coli*  genome in about a minute (my GPU: GeForce RTX 3070 Laptop).  
 
 ## Instructions to Use (with Example Data)  
 
@@ -11,8 +11,7 @@ This is a learning project and my first time using CUDA. It runs pretty fast and
 ```bash
 > src/build.bat
 ```
-
-4. To batch-process sequence files in your own folder, use this command  
+To batch-process sequence files in your own folder, use this command  
 
 ```bash
 > main path/to/your/own/folder
