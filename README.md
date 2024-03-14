@@ -29,7 +29,7 @@ Single-molecule approaches such as optical tweezers, etc. can unzip a single dsD
 
 ![image](reference/sm_DNA_unzipping_exp_schematics.png)
 
- a theoretical prediction of unzipping forces can be calculated from partition functin of the system. The partition function $Z$ at a total extension of the system $z$ is
+ a theoretical prediction of unzipping forces can be calculated from partition function of the system. The partition function $Z$ at a total extension of the system $z$ is
 
 $$Z(z) = \sum_{j=0}^{j_{max}}e^{-G(j,z)/kT}$$
 
@@ -37,7 +37,7 @@ The force $F$ is
 
 $$F(z) = -kT\frac{\partial }{\partial z}\mathrm{ln}Z$$
 
-To calculate the force-extension curve, we need to obtain the energy $G(j,z)$ at each j and z. The calculation of $G(j,z)$ is time-consuming and the scales of j and z are large (usually in a range of 1,000-10,000). Therefore, GPU is a good choice for this problem. This GPU version program is much faster than conventional program (> 10,000 times faster), and 10x faster than my previous, highly-optimized [CPU version](https://github.com/Taomihog/unzipDNA_CPU).
+To calculate the force-extension curve, we need to obtain the energy $G(j,z)$ at each j and z. The calculation of $G(j,z)$ is time-consuming and the scales of j and z are large (usually in a range of 1,000-10,000). Therefore, GPU is a good choice for this problem. This GPU version program is much faster than the conventional programs implemented on CPU (> 10,000 times faster), and 10x faster than my previous, highly-optimized [CPU version](https://github.com/Taomihog/unzipDNA_CPU).
 
 ## Further Reading  
 
