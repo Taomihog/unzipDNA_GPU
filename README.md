@@ -1,6 +1,6 @@
 # DNA Unzipping Curve Calculator (GPU version)  
 
-This is a learning project and my first time using CUDA. It runs pretty fast and can finish the whole *E.coli*  genome in less than a minute (My GPU is GeForce RTX 3070 Laptop).  
+This is my first time using CUDA. It runs pretty fast and can finish the whole *E.coli*  genome in about a minute on my GeForce RTX 3070 Laptop.  
 
 ## Instructions to Use (with Example Data)  
 
@@ -11,8 +11,7 @@ This is a learning project and my first time using CUDA. It runs pretty fast and
 ```bash
 > build.bat
 ```
-
-4. To batch-process sequence files in your own folder, use this command  
+To batch-process sequence files in your own folder, use this command  
 
 ```bash
 > main path/to/your/own/folder
@@ -26,21 +25,22 @@ Prediction vs Experiment:
 
 ![image](reference/theory_vs_experiment.png)
 
-**DNA unzipping experiment vs theory**. The prediction (black) aligns well with a single-molecule experimental data (blue).  
+**DNA unzipping experiment vs theory**. The prediction (**${\color{black}-}$**) aligns well with the single-molecule unzipping curve (**${\color{red}-}$**).  
 
 ## Why CUDA  
 
-Single-molecule approaches such as optical tweezers, can unzip a single dsDNA at single-molecular level. 
+
+Single-molecule approaches such as optical tweezers, can unzip a single dsDNA at single-molecular level.
 
 ![image](reference/sm_DNA_unzipping_exp_schematics.png)  
 
-Theoretical prediction of an unzipping trace (*unzipping force vs total extension*) can be obtained from partition functin of the system. The partition function $Z$ at a total extension of the system $z$ is
+The theoretical prediction of an unzipping trace (*unzipping force vs total extension*) can be obtained from partition functin of the system. The partition function $Z$ at a total extension of the system $z$ is
 
-$Z(z) = \sum_{j=0}^{j_{max}}e^{-G(j,z)/kT}$
+$$Z(z) = \sum_{j=0}^{j_{max}}e^{-G(j,z)/kT}$$
 
 where $G(j,z)$ is the total energy of the system. Force $F(z)$ can be obtained from partition function as follows:  
 
-$F(z) = -kT\frac{\partial \mathrm{ln}Z(z)}{\partial z}$
+$$F(z) = -kT\frac{\partial }{\partial z}\mathrm{ln}Z$$
 
 To calculate the force-extension curve, we need to obtain the energy $G(j,z)$ at every j and z. However, $G$ has a **non-analytical complex form**, while the scales of $j$ and $z$ are large (usually in a range of 1,000-10,000). Moreover, we need to calculate the unzipping traces for every gene in the genome. Even *E. Coli* has thousands of genes. Therefore, Calculation of $G$ for all $j$ and $z$ for all DNA sequences is better to be on a GPU.  
 
