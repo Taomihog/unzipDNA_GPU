@@ -1,6 +1,4 @@
-#include <windows.h>
-// constants.h define "NTHREAD", this value is used here and the .dll source code
-#include "../include/constants.h"
+#include "constants.h"
 
 // CUDA kernel
 // Partition function calculation to get a single point on the unzipping curve

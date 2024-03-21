@@ -1,39 +1,17 @@
 #include <iostream>
 #include <fstream>
-#include <iomanip>
 #include <vector>
-#include <array>
 #include <algorithm>
 #include <numeric>
 #include <iterator>
 #include <cmath>
 #include <windows.h>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <queue>
 #include <chrono>
 #include <filesystem>
 #include <Windows.h>
+#include "constants.h"
 
 using Clock = std::chrono::high_resolution_clock;
-
-// constants.h define "NTHREAD", this value is used here and the .dll source code
-#include "../include/constants.h"
-/*
-// There's no need to polish further, I am brain bleeding now.
-// Another way is using concurrent kernels, may do it later?
-*/
-
-#ifndef NOTEST
-#define JJ 100
-#define ZZ 800
-// f should be 16.3295 at 1600
-#define EXT1 1600
-// f should be 13.8639 at 4402
-#define EXT2 2139
-#define EXT3 2140
-#endif
 
 // =============================================util functions==========================================
 // Is windows chars and strings really this tedious???!
@@ -54,7 +32,6 @@ LPCWSTR convertToLPCWSTR(const std::wstring& str) {
     return str.c_str(); // Returns pointer to the underlying buffer of std::wstring
 }
 
-// single read. todo: read the fasta directly, multiple line read.
 std::string readtxt_firstline(const std::string & path) {
     std::ifstream file(path);
 
@@ -74,10 +51,10 @@ std::string readtxt_firstline(const std::string & path) {
 
     return line;
 }
+
 // sequence's bp energy
 std::vector<double> calculate_sequence_energy(const std::string & sequence) {
     //from the DNA sequence, calculate the energy at every j_unzipped.
-
     std::vector<double> sequenceEnergy;
     if (sequence.size() < 2) {
         std::cerr << "Error: Sequence length must be greater than or equal to 2" << std::endl;
@@ -98,7 +75,6 @@ std::vector<double> calculate_sequence_energy(const std::string & sequence) {
 
 // main
 int main(int argc, char** argv) {
-
     // LUT's size along j (=x) and z (=y) directions
     constexpr int LUT_j_dim = 16384;
     constexpr int LUT_z_dim = 16384;
@@ -159,7 +135,7 @@ int main(int argc, char** argv) {
     std::cout << "folder to calculate: " << folder_in << std::endl;
     std::cout << "folder to save result: " << folder_out << std::endl;
     if (!CreateDirectoryW(convertToLPCWSTR(convertToWideString(folder_out.c_str())), NULL)) {
-        std::cerr << "Error creating directory! Directory may have existed, or the permission is denied. " << std::endl;
+        std::cerr << "Error creating directory! Directory may have existed, or the permission was denied. " << std::endl;
         return 1;
     }
     std::string fullFilePathIn {};

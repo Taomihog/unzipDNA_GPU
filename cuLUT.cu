@@ -1,5 +1,4 @@
-// #include <cuda_runtime.h>
-#include "../include/constants.h"
+#include "constants.h"
 
 #ifndef DLL
 #include <stdio.h>
@@ -206,8 +205,8 @@ void get_LUT(int j_dim, int z_dim, float * force_out, float * energy_out) {
 
 #ifndef DLL
 int main() {
-    constexpr int j_dim = 4096;
-    constexpr int z_dim = 4096;
+    constexpr int j_dim = 16384;
+    constexpr int z_dim = 16384;
     
     float *force = new float [j_dim * z_dim];
     float *energy = new float [j_dim * z_dim];

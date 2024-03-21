@@ -2,12 +2,7 @@
 @echo Cleaning up directory:
 set "batch_folder=%~dp0"
 cd %batch_folder%
-del *.exp
-del *.lib
-del *.o
-del *.dll
-del *.exe
-del *.csv
+del *.exp *.lib *.o *.dll *.exe
 
 @echo Making cuLUT.dll:
 @REM I am not sure about what the "cudart" do
@@ -28,12 +23,10 @@ nvcc -shared -o cuUnzip.dll cuUnzip.o -lcudart
 nvcc main.cu -o main.exe -rdc=true -std=c++17
 
 @echo Cleaning up directory:
-del *.exp
-del *.lib
-del *.o
+del *.exp *.lib *.o
 
 @echo Testing: 
-IF EXIST "../examples/parsed" (
-    rd /s /q "../examples/parsed_unzip_curves"
-    main ../examples/parsed 
+IF EXIST "examples/parsed" (
+    rd /s /q "examples/parsed_unzip_curves"
+    main examples/parsed 
 )
