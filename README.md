@@ -6,10 +6,10 @@ This is my first time using CUDA. It runs pretty fast and can finish the whole *
 
 1. The example genome is NEB H5alpha, the genbank file is in "examples" folder.  
 2. Run **parse_h5alpha.py** to parse the *200304_NEB_H5alpha_genbank.txt* and *200304_NEB_H5alpha.txt* to individual files. These files should be saved in folder "parsed"  
-3. Build the project on Windows. This .bat file will automatically run a test using the sequences in folder "parse"  
+3. Build the project on Windows. This .bat file will automatically run a test using the sequences in "parse" folder  
 
 ```bash
-> src/build.bat
+> build.bat
 ```
 To batch-process sequence files in your own folder, use this command  
 
@@ -17,7 +17,11 @@ To batch-process sequence files in your own folder, use this command
 > main path/to/your/own/folder
 ```
 
-Result:  
+Result (I only showed the first 23 genes):  
+
+![image](reference/result.svg)
+
+Prediction vs Experiment:
 
 ![image](reference/theory_vs_experiment.png)
 
@@ -25,19 +29,22 @@ Result:
 
 ## Why CUDA  
 
-Single-molecule approaches such as optical tweezers, etc. can unzip a single dsDNA at single-molecular level.
 
-![image](reference/sm_DNA_unzipping_exp_schematics.png)
+Single-molecule approaches such as optical tweezers, can unzip a single dsDNA at single-molecular level.
 
- a theoretical prediction of unzipping forces can be calculated from partition function of the system. The partition function $Z$ at a total extension of the system $z$ is
+![image](reference/sm_DNA_unzipping_exp_schematics.png)  
+
+The theoretical prediction of an unzipping trace (*unzipping force vs total extension*) can be obtained from partition functin of the system. The partition function $Z$ at a total extension of the system $z$ is
 
 $$Z(z) = \sum_{j=0}^{j_{max}}e^{-G(j,z)/kT}$$
 
-The force $F$ is
+where $G(j,z)$ is the total energy of the system. Force $F(z)$ can be obtained from partition function as follows:  
 
 $$F(z) = -kT\frac{\partial }{\partial z}\mathrm{ln}Z$$
 
-To calculate the force-extension curve, we need to obtain the energy $G(j,z)$ at each j and z. The calculation of $G(j,z)$ is time-consuming and the scales of j and z are large (usually in a range of 1,000-10,000). Therefore, GPU is a good choice for this problem. This GPU version program is much faster than the conventional programs implemented on CPU (> 10,000 times faster), and 10x faster than my previous, highly-optimized [CPU version](https://github.com/Taomihog/unzipDNA_CPU).
+To calculate the force-extension curve, we need to obtain the energy $G(j,z)$ at every j and z. However, $G$ has a **non-analytical complex form**, while the scales of $j$ and $z$ are large (usually in a range of 1,000-10,000). Moreover, we need to calculate the unzipping traces for every gene in the genome. Even *E. Coli* has thousands of genes. Therefore, Calculation of $G$ for all $j$ and $z$ for all DNA sequences is better to be on a GPU.  
+
+*(Besides using GPU, I also further sped up the calculation using a trick I developed in my previous project [unzipDNA_CPU](https://github.com/Taomihog/unzipDNA_CPU).)*
 
 ## Further Reading  
 
