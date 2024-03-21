@@ -19,7 +19,7 @@ To batch-process sequence files in your own folder, use this command
 
 Result (I only showed the first 23 genes):  
 
-![image](reference/result.svg)
+![image](examples/result.svg)
 
 Prediction vs Experiment:
 
@@ -28,7 +28,6 @@ Prediction vs Experiment:
 **DNA unzipping experiment vs theory**. The prediction (**${\color{black}-}$**) aligns well with the single-molecule unzipping curve (**${\color{red}-}$**).  
 
 ## Why CUDA  
-
 
 Single-molecule approaches such as optical tweezers, can unzip a single dsDNA at single-molecular level.
 

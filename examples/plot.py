@@ -112,6 +112,6 @@ plt.ylabel("force (pN", fontsize = 20)
 plt.yticks([])
 plt.tick_params(axis='both', which='major', labelsize = 20)
 # plt.legend(loc='best')
-plt.savefig("result.svg", dpi = 600)
+plt.savefig("result.png", dpi = 600)
 plt.show()
 
